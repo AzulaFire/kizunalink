@@ -1,10 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
-// Mock data - fetch from Supabase 'hobbies' table in real app
+// Mock data for tags (in V2 we will fetch this from DB table 'hobbies')
 const AVAILABLE_HOBBIES = [
   { id: 1, name: 'Street Photography', category: 'Creative' },
   { id: 2, name: 'Cafe Hopping', category: 'Social' },
@@ -12,11 +14,47 @@ const AVAILABLE_HOBBIES = [
   { id: 4, name: 'Hiking', category: 'Sports' },
   { id: 5, name: 'Goshuin (Temple Seals)', category: 'Cultural' },
   { id: 6, name: 'Sake Tasting', category: 'Social' },
+  { id: 7, name: 'Coding', category: 'Tech' },
 ];
 
 export default function EditProfile() {
-  const [selectedHobbies, setSelectedHobbies] = useState([1, 4]); // Mock pre-selected
+  const router = useRouter();
+  const [selectedHobbies, setSelectedHobbies] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Form State
+  const [fullName, setFullName] = useState('');
+  const [bio, setBio] = useState('');
+  const [homeStation, setHomeStation] = useState('');
+
+  useEffect(() => {
+    const getProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      setUser(user);
+
+      // Fetch existing profile data
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        setFullName(data.full_name || '');
+        // If you added bio/home_station columns to profiles in SQL, map them here:
+        // setBio(data.bio || "");
+        // setHomeStation(data.home_station || "");
+      }
+    };
+    getProfile();
+  }, [router]);
 
   const toggleHobby = (id) => {
     setSelectedHobbies((prev) =>
@@ -25,9 +63,31 @@ export default function EditProfile() {
   };
 
   const handleSave = async () => {
+    if (!user) return;
     setIsSaving(true);
-    // await supabase.from('user_hobbies').upsert(...)
-    setTimeout(() => setIsSaving(false), 1000);
+
+    // 1. Update Profile Text
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: fullName,
+        // bio: bio, // Uncomment if you added these columns
+        // city: homeStation
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error(error);
+      alert('Error saving profile');
+    } else {
+      // 2. Update Hobbies (Logic would go here to update user_hobbies pivot table)
+      // await supabase.from('user_hobbies').upsert(...)
+
+      alert('Profile updated!');
+      router.push('/dashboard');
+    }
+
+    setIsSaving(false);
   };
 
   return (
@@ -38,7 +98,7 @@ export default function EditProfile() {
           Edit Your Profile
         </h1>
 
-        <form className='space-y-8'>
+        <form className='space-y-8' onSubmit={(e) => e.preventDefault()}>
           {/* Basic Info */}
           <Card className='bg-white dark:bg-zinc-900'>
             <CardHeader>
@@ -51,7 +111,8 @@ export default function EditProfile() {
                 </label>
                 <input
                   className='w-full p-2 border rounded-md bg-transparent'
-                  defaultValue='John Doe'
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                 />
               </div>
               <div>
@@ -59,7 +120,9 @@ export default function EditProfile() {
                 <textarea
                   className='w-full p-2 border rounded-md bg-transparent'
                   rows='3'
-                  defaultValue='Love capturing moments in Tokyo.'
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder='Tell us about yourself...'
                 />
               </div>
               <div>
@@ -69,10 +132,9 @@ export default function EditProfile() {
                 <input
                   className='w-full p-2 border rounded-md bg-transparent'
                   placeholder='e.g. Yoyogi-Uehara'
+                  value={homeStation}
+                  onChange={(e) => setHomeStation(e.target.value)}
                 />
-                <p className='text-xs text-zinc-500 mt-1'>
-                  Used to find events near you.
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -109,7 +171,9 @@ export default function EditProfile() {
           </Card>
 
           <div className='flex justify-end gap-4'>
-            <Button variant='ghost'>Cancel</Button>
+            <Button variant='ghost' onClick={() => router.back()}>
+              Cancel
+            </Button>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Profile'}
             </Button>

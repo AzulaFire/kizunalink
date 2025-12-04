@@ -4,28 +4,104 @@ import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { supabase } from '@/lib/supabase';
 
-// In a real app, this would be a server component fetching from DB
-// But for RSVP interactivity, we use a Client Component pattern here
 export default function EventDetail({ params }) {
-  const { id } = use(params); // Unwrapping params for Next.js 15
+  const { id } = use(params);
 
+  const [event, setEvent] = useState(null);
+  const [host, setHost] = useState(null);
   const [hasRsvpd, setHasRsvpd] = useState(false);
-  const [attendeeCount, setAttendeeCount] = useState(12); // Mock count
-  const [loading, setLoading] = useState(false);
+  const [attendeeCount, setAttendeeCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // 1. Get Current User
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+
+      // 2. Fetch Event Details
+      const { data: eventData, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) console.error('Error fetching event:', error);
+      setEvent(eventData);
+
+      // 3. Fetch Host Profile
+      if (eventData) {
+        const { data: hostData } = await supabase
+          .from('profiles')
+          .select('full_name, is_premium')
+          .eq('id', eventData.host_id)
+          .single();
+        setHost(hostData);
+      }
+
+      // 4. Check Attendees
+      const { count } = await supabase
+        .from('event_attendees')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', id);
+      setAttendeeCount(count || 0);
+
+      // 5. Check if *I* am going
+      if (user) {
+        const { data: myRsvp } = await supabase
+          .from('event_attendees')
+          .select('*')
+          .eq('event_id', id)
+          .eq('user_id', user.id)
+          .single();
+        if (myRsvp) setHasRsvpd(true);
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [id]);
 
   const handleRSVP = async () => {
-    setLoading(true);
+    if (!user) {
+      alert('Please log in to RSVP');
+      return;
+    }
+    setRsvpLoading(true);
 
-    // Simulate API call to Supabase
-    // await supabase.from('event_attendees').insert({ event_id: id, user_id: currentUser.id })
+    const { error } = await supabase
+      .from('event_attendees')
+      .insert({ event_id: id, user_id: user.id });
 
-    setTimeout(() => {
+    if (!error) {
       setHasRsvpd(true);
       setAttendeeCount((prev) => prev + 1);
-      setLoading(false);
-    }, 800);
+    } else {
+      console.error(error);
+      alert('Error joining event.');
+    }
+    setRsvpLoading(false);
   };
+
+  if (loading)
+    return (
+      <div className='min-h-screen flex items-center justify-center dark:bg-black text-white'>
+        Loading...
+      </div>
+    );
+  if (!event)
+    return (
+      <div className='min-h-screen flex items-center justify-center dark:bg-black text-white'>
+        Event not found
+      </div>
+    );
 
   return (
     <div className='min-h-screen bg-zinc-50 dark:bg-black'>
@@ -36,21 +112,21 @@ export default function EventDetail({ params }) {
           <div className='md:col-span-2 space-y-6'>
             <div className='space-y-2'>
               <span className='text-indigo-600 font-semibold tracking-wide text-sm uppercase'>
-                Tech Networking
+                {event.category}
               </span>
               <h1 className='text-4xl font-bold tracking-tight text-zinc-900 dark:text-white'>
-                Shibuya Startup Night
+                {event.title}
               </h1>
             </div>
 
             <div className='flex items-center gap-6 text-zinc-500 text-sm md:text-base'>
               <div className='flex items-center gap-2'>
                 <span className='text-lg'>🗓️</span>
-                <span>Oct 24, 19:00</span>
+                <span>{new Date(event.event_date).toLocaleString()}</span>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='text-lg'>📍</span>
-                <span>Shibuya, Tokyo</span>
+                <span>{event.city}</span>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='text-lg'>👥</span>
@@ -58,20 +134,11 @@ export default function EventDetail({ params }) {
               </div>
             </div>
 
-            <div className='prose dark:prose-invert max-w-none text-zinc-600 dark:text-zinc-300 leading-relaxed'>
+            <div className='prose dark:prose-invert max-w-none text-zinc-600 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap'>
               <h3 className='text-lg font-semibold text-zinc-900 dark:text-white'>
                 About this event
               </h3>
-              <p>
-                Are you a founder, engineer, or designer? Come join us for a
-                casual networking night at the WeWork in Shibuya Scramble
-                Square. Drinks and light snacks provided. Entrance is free but
-                please RSVP via the link.
-              </p>
-              <p>
-                We will have a short 15 min lightning talk session followed by
-                open mixing.
-              </p>
+              {event.description}
             </div>
 
             <Alert>
@@ -88,13 +155,17 @@ export default function EventDetail({ params }) {
             <Card className='p-6 space-y-4 shadow-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-24'>
               <div className='flex items-center gap-3'>
                 <div className='size-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold'>
-                  JS
+                  {host?.full_name
+                    ? host.full_name.substring(0, 2).toUpperCase()
+                    : 'H'}
                 </div>
                 <div>
                   <p className='text-sm font-medium text-zinc-900 dark:text-white'>
-                    Hosted by John S.
+                    Hosted by {host?.full_name || 'Unknown'}
                   </p>
-                  <p className='text-xs text-zinc-500'>Premium Member</p>
+                  {host?.is_premium && (
+                    <p className='text-xs text-zinc-500'>Premium Member</p>
+                  )}
                 </div>
               </div>
 
@@ -110,12 +181,12 @@ export default function EventDetail({ params }) {
                       Join the chat:
                     </p>
                     <a
-                      href='https://discord.gg'
+                      href={event.external_link}
                       target='_blank'
                       className='block'
                     >
                       <Button variant='outline' className='w-full'>
-                        Open Discord
+                        Open Link (Discord/Line)
                       </Button>
                     </a>
                   </div>
@@ -123,10 +194,10 @@ export default function EventDetail({ params }) {
               ) : (
                 <Button
                   onClick={handleRSVP}
-                  disabled={loading}
+                  disabled={rsvpLoading}
                   className='w-full text-lg h-12 bg-indigo-600 hover:bg-indigo-700 text-white'
                 >
-                  {loading ? 'Confirming...' : 'RSVP to Event'}
+                  {rsvpLoading ? 'Confirming...' : 'RSVP to Event'}
                 </Button>
               )}
 

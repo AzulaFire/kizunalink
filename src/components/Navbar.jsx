@@ -1,10 +1,39 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-  // In a real app, you would check Supabase auth state here
-  const user = null; // Mock user state
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // 1. Check active session on load
+    const checkUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+    };
+    checkUser();
+
+    // 2. Listen for login/logout events
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push('/login');
+  };
 
   return (
     <nav className='border-b bg-white/80 backdrop-blur-md sticky top-0 z-50 dark:bg-zinc-950/80 dark:border-zinc-800'>
@@ -40,9 +69,18 @@ export default function Navbar() {
           </div>
           <div className='flex items-center gap-4'>
             {user ? (
-              <Link href='/dashboard'>
-                <Button variant='outline'>Dashboard</Button>
-              </Link>
+              <>
+                <Link href='/dashboard'>
+                  <Button variant='outline'>Dashboard</Button>
+                </Link>
+                <Button
+                  variant='ghost'
+                  onClick={handleLogout}
+                  className='text-sm text-zinc-500'
+                >
+                  Log out
+                </Button>
+              </>
             ) : (
               <>
                 <Link
