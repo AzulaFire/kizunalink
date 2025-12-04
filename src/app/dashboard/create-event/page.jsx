@@ -30,12 +30,12 @@ export default function CreateEvent() {
       host_id: user.id,
       title: formData.get('title'),
       event_date: formData.get('event_date'),
-      // For simplicity in MVP, setting end time to 2 hours after start
+      // Set end time to 2 hours after start by default
       end_time: new Date(
         new Date(formData.get('event_date')).getTime() + 2 * 60 * 60 * 1000
       ).toISOString(),
       city: formData.get('city'),
-      category: formData.get('category'), // You might want to add a select for this
+      category: formData.get('category'),
       description: formData.get('description'),
       external_link: formData.get('external_link'),
       vibe: vibe,
@@ -46,7 +46,7 @@ export default function CreateEvent() {
 
     if (error) {
       console.error('Error creating event:', error);
-      alert('Failed to create event: ' + error.message);
+      alert('Failed: ' + error.message);
     } else {
       alert('Event Created Successfully!');
       router.push('/events');
@@ -56,7 +56,7 @@ export default function CreateEvent() {
   };
 
   return (
-    <div className='min-h-screen bg-zinc-50 dark:bg-black'>
+    <div className='min-h-screen bg-background'>
       <Navbar />
       <div className='max-w-2xl mx-auto px-4 py-12'>
         <h1 className='text-3xl font-bold mb-2 text-white'>
@@ -65,7 +65,7 @@ export default function CreateEvent() {
         <p className='text-zinc-400 mb-8'>Design a space for connection.</p>
 
         <form onSubmit={handleSubmit} className='space-y-6'>
-          <div className='bg-white dark:bg-zinc-900 p-6 rounded-xl border border-white/10 space-y-4'>
+          <div className='bg-card p-6 rounded-xl border border-white/10 space-y-4'>
             <h3 className='font-semibold text-lg text-white'>Event Details</h3>
 
             <div>
@@ -75,7 +75,7 @@ export default function CreateEvent() {
               <input
                 name='title'
                 required
-                className='w-full p-2 border border-white/20 rounded-md bg-transparent text-white'
+                className='w-full p-2 border border-white/20 rounded-md bg-transparent text-white focus:border-primary focus:outline-none'
                 placeholder='e.g. Sunday Coding Club'
               />
             </div>
@@ -98,7 +98,7 @@ export default function CreateEvent() {
                 </label>
                 <select
                   name='city'
-                  className='w-full p-2 border border-white/20 rounded-md bg-zinc-900 text-white'
+                  className='w-full p-2 border border-white/20 rounded-md bg-secondary text-white'
                 >
                   <option value='Tokyo'>Tokyo</option>
                   <option value='Osaka'>Osaka</option>
@@ -114,7 +114,7 @@ export default function CreateEvent() {
               </label>
               <select
                 name='category'
-                className='w-full p-2 border border-white/20 rounded-md bg-zinc-900 text-white'
+                className='w-full p-2 border border-white/20 rounded-md bg-secondary text-white'
               >
                 <option value='Tech'>Tech</option>
                 <option value='Outdoors'>Outdoors</option>
@@ -152,19 +152,18 @@ export default function CreateEvent() {
             </div>
           </div>
 
-          <div className='bg-white dark:bg-zinc-900 p-6 rounded-xl border border-white/10 space-y-6'>
+          <div className='bg-card p-6 rounded-xl border border-white/10 space-y-6'>
             <h3 className='font-semibold text-lg text-white'>
               Set the Atmosphere
             </h3>
 
-            {/* Solo Friendly Toggle */}
             <div className='flex items-center justify-between'>
               <div>
                 <label className='font-medium text-white'>
                   🔰 Solo-Participants Only?
                 </label>
                 <p className='text-sm text-zinc-500'>
-                  Only allow people joining alone. Great for making new friends.
+                  Only allow people joining alone.
                 </p>
               </div>
               <button
@@ -182,7 +181,6 @@ export default function CreateEvent() {
               </button>
             </div>
 
-            {/* Vibe Selection */}
             <div>
               <label className='font-medium block mb-3 text-white'>
                 The Vibe
@@ -198,9 +196,6 @@ export default function CreateEvent() {
                 >
                   <div className='text-2xl mb-1'>🍵</div>
                   <div className='font-bold text-white'>Yuru (Chill)</div>
-                  <div className='text-xs text-zinc-400'>
-                    Relaxed, no pressure
-                  </div>
                 </div>
 
                 <div
@@ -213,9 +208,6 @@ export default function CreateEvent() {
                 >
                   <div className='text-2xl mb-1'>🔥</div>
                   <div className='font-bold text-white'>Gachi (Serious)</div>
-                  <div className='text-xs text-zinc-400'>
-                    Structured, focused
-                  </div>
                 </div>
               </div>
             </div>

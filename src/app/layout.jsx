@@ -12,14 +12,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: 'KizunaLink - Find your circle in Japan',
-  description:
-    'Connect with local hobby groups and events in Tokyo, Osaka, and beyond.',
+  title: 'KizunaLink - Find your circle',
+  description: 'Connect with local hobby groups in Japan.',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang='en' className='dark'>
+    <html lang='en'>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

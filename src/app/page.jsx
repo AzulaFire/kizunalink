@@ -14,7 +14,6 @@ import { supabase } from '@/lib/supabase';
 export default function Home() {
   const [createLink, setCreateLink] = useState('/pricing');
 
-  // Check if user is premium on load
   useEffect(() => {
     const checkPremiumStatus = async () => {
       const {
@@ -63,7 +62,8 @@ export default function Home() {
               Browse Events
             </Button>
           </Link>
-          {/* This link is now dynamic! */}
+
+          {/* Dynamic Link Button */}
           <Link href={createLink}>
             <Button
               variant='outline'

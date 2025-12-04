@@ -1,39 +1,40 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* Force Dark Mode by default for this design */
+/* Force Dark Mode aesthetic */
 :root {
-  --background: oklch(0.1 0 0); /* Very dark grey/black */
-  --foreground: oklch(0.985 0 0); /* White text */
+  --background: oklch(0.11 0.01 260); /* Deep Slate/Black */
+  --foreground: oklch(0.98 0 0); /* White */
 
-  --card: oklch(0.13 0 0); /* Slightly lighter background for cards */
-  --card-foreground: oklch(0.985 0 0);
+  --card: oklch(0.14 0.01 260); /* Slightly lighter slate */
+  --card-foreground: oklch(0.98 0 0);
 
-  --popover: oklch(0.13 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.14 0.01 260);
+  --popover-foreground: oklch(0.98 0 0);
 
   --primary: oklch(0.6 0.18 270); /* Vibrant Indigo/Purple */
-  --primary-foreground: oklch(0.985 0 0);
+  --primary-foreground: oklch(1 0 0);
 
-  --secondary: oklch(0.25 0 0); /* Dark grey for secondary actions */
-  --secondary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.2 0.02 260); /* Dark Grey for buttons */
+  --secondary-foreground: oklch(0.98 0 0);
 
-  --muted: oklch(0.25 0 0);
+  --muted: oklch(0.2 0.02 260);
   --muted-foreground: oklch(0.7 0 0);
 
-  --accent: oklch(0.25 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.25 0.05 260); /* Hover state */
+  --accent-foreground: oklch(0.98 0 0);
 
-  --destructive: oklch(0.6 0.25 25); /* Red */
-  --destructive-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.4 0.15 20); /* Red */
+  --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(0.25 0 0); /* Dark borders */
-  --input: oklch(0.25 0 0);
+  --border: oklch(0.2 0.02 260); /* Subtle borders */
+  --input: oklch(0.2 0.02 260);
   --ring: oklch(0.6 0.18 270);
 
   --radius: 0.5rem;
 }
 
+/* Ensure these map to Tailwind classes */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
