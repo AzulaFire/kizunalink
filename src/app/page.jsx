@@ -1,65 +1,89 @@
-import Image from "next/image";
+import Navbar from '@/components/Navbar';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@/components/ui/card';
+import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className='min-h-screen flex flex-col bg-zinc-50 dark:bg-black'>
+      <Navbar />
+
+      {/* Hero Section */}
+      <section className='py-20 px-4 text-center space-y-6 max-w-4xl mx-auto mt-10'>
+        <div className='inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100'>
+          Now Live in Tokyo & Osaka
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+        <h1 className='text-5xl sm:text-7xl font-bold tracking-tight text-zinc-900 dark:text-white'>
+          Find your circle <br className='hidden sm:block' />
+          <span className='text-indigo-600'>in Japan.kq</span>
+        </h1>
+        <p className='text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto'>
+          Discover local hobby groups, language exchanges, and tech meetups.
+          Connect with real people in the real world.
+        </p>
+        <div className='flex flex-col sm:flex-row gap-4 justify-center pt-4'>
+          <Link href='/events'>
+            <Button size='lg' className='h-12 px-8 text-base'>
+              Browse Events
+            </Button>
+          </Link>
+          <Link href='/pricing'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='h-12 px-8 text-base bg-white dark:bg-zinc-900'
+            >
+              Create Event
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Featured Locations/Hobbies */}
+      <section className='py-20 bg-white dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800'>
+        <div className='max-w-7xl mx-auto px-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+            <FeatureCard
+              title='Tokyo Tech'
+              count='12 active events'
+              icon='💻'
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <FeatureCard
+              title='Osaka Language Exchange'
+              count='8 active events'
+              icon='cJ'
+            />
+            <FeatureCard
+              title='Weekend Hiking'
+              count='24 active events'
+              icon='Vm'
+            />
+          </div>
         </div>
-      </main>
+      </section>
     </div>
+  );
+}
+
+function FeatureCard({ title, count, icon }) {
+  return (
+    <Card className='hover:shadow-md transition-shadow cursor-pointer'>
+      <CardHeader className='flex flex-row items-center gap-4'>
+        <div className='size-12 rounded-lg bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-2xl'>
+          {icon}
+        </div>
+        <div>
+          <CardTitle className='text-lg'>{title}</CardTitle>
+          <CardDescription>{count}</CardDescription>
+        </div>
+      </CardHeader>
+    </Card>
   );
 }
