@@ -10,7 +10,6 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    // 1. Check active session on load
     const checkUser = async () => {
       const {
         data: { session },
@@ -19,7 +18,6 @@ export default function Navbar() {
     };
     checkUser();
 
-    // 2. Listen for login/logout events
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -36,32 +34,32 @@ export default function Navbar() {
   };
 
   return (
-    <nav className='border-b bg-white/80 backdrop-blur-md sticky top-0 z-50 dark:bg-zinc-950/80 dark:border-zinc-800'>
+    <nav className='border-b border-white/10 bg-black/50 backdrop-blur-md sticky top-0 z-50'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='flex justify-between h-16 items-center'>
           <div className='flex items-center gap-8'>
             <Link
               href='/'
-              className='text-xl font-bold tracking-tighter text-zinc-900 dark:text-white'
+              className='text-xl font-bold tracking-tighter text-white'
             >
-              Kizuna<span className='text-indigo-600'>Link</span>
+              Kizuna<span className='text-primary'>Link</span>
             </Link>
-            <div className='hidden md:flex gap-6 text-sm font-medium text-zinc-600 dark:text-zinc-400'>
+            <div className='hidden md:flex gap-6 text-sm font-medium text-zinc-400'>
               <Link
                 href='/events'
-                className='hover:text-zinc-900 dark:hover:text-white transition-colors'
+                className='hover:text-white transition-colors'
               >
                 Browse Events
               </Link>
               <Link
                 href='/calendar'
-                className='hover:text-zinc-900 dark:hover:text-white transition-colors'
+                className='hover:text-white transition-colors'
               >
                 Calendar
               </Link>
               <Link
                 href='/pricing'
-                className='hover:text-zinc-900 dark:hover:text-white transition-colors'
+                className='hover:text-white transition-colors'
               >
                 Pricing
               </Link>
@@ -71,12 +69,17 @@ export default function Navbar() {
             {user ? (
               <>
                 <Link href='/dashboard'>
-                  <Button variant='outline'>Dashboard</Button>
+                  <Button
+                    variant='outline'
+                    className='border-white/20 hover:bg-white/10'
+                  >
+                    Dashboard
+                  </Button>
                 </Link>
                 <Button
                   variant='ghost'
                   onClick={handleLogout}
-                  className='text-sm text-zinc-500'
+                  className='text-sm text-zinc-400 hover:text-white'
                 >
                   Log out
                 </Button>
@@ -85,12 +88,14 @@ export default function Navbar() {
               <>
                 <Link
                   href='/login'
-                  className='text-sm font-medium text-zinc-600 hover:text-zinc-900 hidden sm:block'
+                  className='text-sm font-medium text-zinc-400 hover:text-white hidden sm:block'
                 >
                   Log in
                 </Link>
                 <Link href='/register'>
-                  <Button>Get Started</Button>
+                  <Button className='bg-primary hover:bg-primary/90 text-white border-0'>
+                    Get Started
+                  </Button>
                 </Link>
               </>
             )}

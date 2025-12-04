@@ -1,14 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { EventCard } from '@/components/EventCard'; // Assuming you have this component
+import { EventCard } from '@/components/EventCard';
 import { supabase } from '@/lib/supabase';
 
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter States
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -19,7 +18,6 @@ export default function EventsPage() {
         .select('*')
         .order('event_date', { ascending: true });
 
-      // Apply DB filters if selected
       if (selectedCity !== 'All') query = query.eq('city', selectedCity);
       if (selectedCategory !== 'All')
         query = query.eq('category', selectedCategory);
@@ -36,21 +34,20 @@ export default function EventsPage() {
   }, [selectedCity, selectedCategory]);
 
   return (
-    <div className='min-h-screen bg-zinc-50 dark:bg-black'>
+    <div className='min-h-screen bg-background'>
       <Navbar />
       <main className='max-w-7xl mx-auto px-4 py-12'>
         <div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4'>
           <div>
-            <h2 className='text-3xl font-bold tracking-tight'>
+            <h2 className='text-3xl font-bold tracking-tight text-white'>
               Upcoming Events
             </h2>
-            <p className='text-zinc-500'>Join a community near you.</p>
+            <p className='text-zinc-400'>Join a community near you.</p>
           </div>
 
-          {/* Live Filters */}
           <div className='flex gap-2'>
             <select
-              className='h-10 rounded-md border border-input bg-background px-3 py-2 text-sm'
+              className='h-10 rounded-md border border-white/20 bg-secondary px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary'
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
             >
@@ -60,7 +57,7 @@ export default function EventsPage() {
               <option value='Kyoto'>Kyoto</option>
             </select>
             <select
-              className='h-10 rounded-md border border-input bg-background px-3 py-2 text-sm'
+              className='h-10 rounded-md border border-white/20 bg-secondary px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary'
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
@@ -74,7 +71,7 @@ export default function EventsPage() {
         </div>
 
         {loading ? (
-          <div className='text-center py-20 text-zinc-500'>
+          <div className='text-center py-20 text-zinc-500 animate-pulse'>
             Loading events...
           </div>
         ) : (
@@ -100,7 +97,7 @@ export default function EventsPage() {
                 />
               ))
             ) : (
-              <div className='col-span-full text-center py-20 text-zinc-500 bg-white dark:bg-zinc-900 rounded-xl border border-dashed'>
+              <div className='col-span-full text-center py-20 text-zinc-500 bg-card rounded-xl border border-dashed border-white/10'>
                 No events found matching your filters.
               </div>
             )}
