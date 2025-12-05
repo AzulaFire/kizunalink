@@ -4,24 +4,45 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    const checkUser = async () => {
+    const fetchData = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       setUser(session?.user || null);
+
+      if (session?.user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', session.user.id)
+          .single();
+        setProfile(data);
+      }
     };
-    checkUser();
+    fetchData();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', session.user.id)
+          .single();
+        setProfile(data);
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -30,6 +51,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setProfile(null);
     router.push('/login');
   };
 
@@ -68,6 +90,31 @@ export default function Navbar() {
           <div className='flex items-center gap-4'>
             {user ? (
               <>
+                {/* User Greeting & Avatar */}
+                <div className='flex items-center gap-3 mr-2'>
+                  <div className='text-right hidden sm:block'>
+                    <p className='text-xs text-zinc-400'>Welcome back,</p>
+                    <p className='text-sm font-medium text-white max-w-[100px] truncate'>
+                      {profile?.full_name || 'Friend'}
+                    </p>
+                  </div>
+                  <Link href='/profile/edit'>
+                    {profile?.avatar_url ? (
+                      <Image
+                        src={profile.avatar_url}
+                        alt='Profile'
+                        className='size-9 rounded-full object-cover border border-white/10 hover:border-primary/50 transition-colors'
+                      />
+                    ) : (
+                      <div className='size-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold border border-white/10'>
+                        {profile?.full_name
+                          ? profile.full_name[0].toUpperCase()
+                          : 'U'}
+                      </div>
+                    )}
+                  </Link>
+                </div>
+
                 <Link href='/dashboard'>
                   <Button
                     variant='outline'

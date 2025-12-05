@@ -1,26 +1,53 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Navbar from '@/components/Navbar';
-import { EventCard } from '@/components/EventCard';
-import { supabase } from '@/lib/supabase';
+import Navbar from '../../components/Navbar';
+import { EventCard } from '../../components/EventCard';
+import { supabase } from '../../lib/supabase';
+import { useSearchParams } from 'next/navigation';
 
 export default function EventsPage() {
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cities, setCities] = useState([]);
 
-  const [selectedCity, setSelectedCity] = useState('All');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  // Filters state initialized from URL params if present
+  const [selectedCity, setSelectedCity] = useState(
+    searchParams.get('city') || 'All'
+  );
+  const [selectedCategory, setSelectedCategory] = useState(
+    searchParams.get('category') || 'All'
+  );
+  const [selectedVibe, setSelectedVibe] = useState(
+    searchParams.get('vibe') || 'All'
+  );
+  const [soloOnly, setSoloOnly] = useState(false);
+
+  useEffect(() => {
+    // Fetch Cities for Filter
+    const fetchCities = async () => {
+      const { data } = await supabase
+        .from('cities')
+        .select('name')
+        .order('name');
+      if (data) setCities(data);
+    };
+    fetchCities();
+  }, []);
 
   useEffect(() => {
     const fetchEvents = async () => {
       let query = supabase
         .from('events')
         .select('*')
+        .neq('status', 'cancelled') // Hide cancelled events from main feed
         .order('event_date', { ascending: true });
 
       if (selectedCity !== 'All') query = query.eq('city', selectedCity);
       if (selectedCategory !== 'All')
         query = query.eq('category', selectedCategory);
+      if (selectedVibe !== 'All') query = query.eq('vibe', selectedVibe);
+      if (soloOnly) query = query.eq('is_solo_friendly', true);
 
       const { data, error } = await query;
 
@@ -31,42 +58,68 @@ export default function EventsPage() {
     };
 
     fetchEvents();
-  }, [selectedCity, selectedCategory]);
+  }, [selectedCity, selectedCategory, selectedVibe, soloOnly]);
 
   return (
     <div className='min-h-screen bg-background'>
       <Navbar />
       <main className='max-w-7xl mx-auto px-4 py-12'>
-        <div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4'>
+        <div className='flex flex-col gap-6 mb-8'>
           <div>
             <h2 className='text-3xl font-bold tracking-tight text-white'>
               Upcoming Events
             </h2>
-            <p className='text-zinc-400'>Join a community near you.</p>
+            <p className='text-zinc-400'>Find your circle.</p>
           </div>
 
-          <div className='flex gap-2'>
+          <div className='flex flex-wrap gap-4 items-center bg-card p-4 rounded-xl border border-white/10'>
             <select
               className='h-10 rounded-md border border-white/20 bg-secondary px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary'
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
             >
-              <option value='All'>All Cities</option>
-              <option value='Tokyo'>Tokyo</option>
-              <option value='Osaka'>Osaka</option>
-              <option value='Kyoto'>Kyoto</option>
+              <option value='All'>📍 All Cities</option>
+              {cities.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
             </select>
+
             <select
               className='h-10 rounded-md border border-white/20 bg-secondary px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary'
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
-              <option value='All'>All Categories</option>
+              <option value='All'>WM All Categories</option>
               <option value='Tech'>Tech</option>
               <option value='Outdoors'>Outdoors</option>
               <option value='Social'>Social</option>
               <option value='Learning'>Learning</option>
             </select>
+
+            <select
+              className='h-10 rounded-md border border-white/20 bg-secondary px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary'
+              value={selectedVibe}
+              onChange={(e) => setSelectedVibe(e.target.value)}
+            >
+              <option value='All'>✨ Any Vibe</option>
+              <option value='chill'>🍵 Chill (Yuru)</option>
+              <option value='serious'>🔥 Serious (Gachi)</option>
+              <option value='party'>🎉 Party</option>
+              <option value='learning'>🧠 Learning</option>
+            </select>
+
+            <button
+              onClick={() => setSoloOnly(!soloOnly)}
+              className={`h-10 px-4 rounded-md text-sm font-medium transition-all border ${
+                soloOnly
+                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                  : 'bg-secondary border-white/20 text-zinc-400 hover:text-white'
+              }`}
+            >
+              {soloOnly ? '🔰 Solo-Friendly Only' : 'Show All Events'}
+            </button>
           </div>
         </div>
 
@@ -93,6 +146,7 @@ export default function EventsPage() {
                     description: e.description,
                     is_solo_friendly: e.is_solo_friendly,
                     vibe: e.vibe,
+                    language_level: e.language_level,
                   }}
                 />
               ))

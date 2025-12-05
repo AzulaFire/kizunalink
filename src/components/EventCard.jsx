@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import {
   Card,
-  CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
   CardDescription,
+  CardContent,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -28,7 +28,7 @@ export function EventCard({ event }) {
       case 'learning':
         return (
           <span className='bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full border border-blue-200'>
-            📚 Learning
+            🧠 Learning
           </span>
         );
       default:
@@ -48,6 +48,13 @@ export function EventCard({ event }) {
           )}
           {/* Vibe Badge */}
           {getVibeBadge(event.vibe)}
+
+          {/* [Feature 4] Language Badge */}
+          {event.language_level && event.language_level !== 'All Levels' && (
+            <span className='bg-orange-100 text-orange-800 text-[10px] px-2 py-0.5 rounded-full border border-orange-200'>
+              🗣️ {event.language_level}
+            </span>
+          )}
         </div>
 
         <CardTitle className='text-xl group-hover:text-indigo-600 transition-colors'>

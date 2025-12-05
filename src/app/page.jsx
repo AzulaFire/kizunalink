@@ -1,21 +1,24 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Navbar from '@/components/Navbar';
-import { Button } from '@/components/ui/button';
+import Navbar from '../components/Navbar';
+import { Button } from '../components/ui/button';
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card';
+} from '../components/ui/card';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export default function Home() {
   const [createLink, setCreateLink] = useState('/pricing');
+  const [featuredCities, setFeaturedCities] = useState([]);
+  const [featuredHobbies, setFeaturedHobbies] = useState([]);
 
   useEffect(() => {
-    const checkPremiumStatus = async () => {
+    const initData = async () => {
+      // 1. Check Premium
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -30,8 +33,36 @@ export default function Home() {
           setCreateLink('/dashboard/create-event');
         }
       }
+
+      // 2. Fetch Featured Cities
+      const { data: cities } = await supabase
+        .from('cities')
+        .select('*')
+        .eq('is_featured', true)
+        .limit(3);
+      setFeaturedCities(cities || []);
+
+      // 3. Fetch Featured Hobby Categories
+      const { data: hobbies } = await supabase
+        .from('hobbies')
+        .select('category, emoji')
+        .limit(10);
+
+      // Filter unique categories client-side for display
+      const uniqueCats = [];
+      const seen = new Set();
+      if (hobbies) {
+        for (const h of hobbies) {
+          if (!seen.has(h.category)) {
+            seen.add(h.category);
+            uniqueCats.push(h);
+          }
+          if (uniqueCats.length >= 3) break;
+        }
+      }
+      setFeaturedHobbies(uniqueCats);
     };
-    checkPremiumStatus();
+    initData();
   }, []);
 
   return (
@@ -41,7 +72,10 @@ export default function Home() {
       {/* Hero Section */}
       <section className='py-24 px-4 text-center space-y-8 max-w-4xl mx-auto mt-10'>
         <div className='inline-flex items-center rounded-full border border-primary/30 px-3 py-1 text-xs font-semibold bg-primary/10 text-primary-foreground'>
-          Now Live in Tokyo & Osaka
+          Now Live in{' '}
+          {featuredCities.length > 0
+            ? featuredCities.map((c) => c.name).join(' & ')
+            : 'Japan'}
         </div>
         <h1 className='text-6xl sm:text-7xl font-bold tracking-tight text-white leading-tight'>
           Find your circle <br className='hidden sm:block' />
@@ -62,8 +96,6 @@ export default function Home() {
               Browse Events
             </Button>
           </Link>
-
-          {/* Dynamic Link Button */}
           <Link href={createLink}>
             <Button
               variant='outline'
@@ -76,25 +108,51 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Locations/Hobbies */}
+      {/* Featured Interactive Section */}
       <section className='py-24 bg-card border-t border-white/5'>
         <div className='max-w-7xl mx-auto px-4'>
+          <h2 className='text-2xl font-bold text-white mb-8'>
+            Featured Communities
+          </h2>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-            <FeatureCard
-              title='Tokyo Tech'
-              count='12 active events'
-              icon='💻'
-            />
-            <FeatureCard
-              title='Osaka Language Exchange'
-              count='8 active events'
-              icon='🗣️'
-            />
-            <FeatureCard
-              title='Weekend Hiking'
-              count='24 active events'
-              icon='⛰️'
-            />
+            {/* Dynamic Cities */}
+            {featuredCities.map((city) => (
+              <Link href={`/events?city=${city.name}`} key={city.id}>
+                <FeatureCard
+                  title={`${city.name} Hub`}
+                  desc={`Explore events happening in ${city.name}.`}
+                  icon='🏙️'
+                />
+              </Link>
+            ))}
+
+            {/* Dynamic Categories */}
+            {featuredHobbies.map((h, i) => (
+              <Link href={`/events?category=${h.category}`} key={i}>
+                <FeatureCard
+                  title={h.category}
+                  desc={`Connect with ${h.category.toLowerCase()} enthusiasts.`}
+                  icon={h.emoji || '✨'}
+                />
+              </Link>
+            ))}
+
+            {/* Static Fallback if DB is empty */}
+            {featuredCities.length === 0 && featuredHobbies.length === 0 && (
+              <>
+                <FeatureCard
+                  title='Tokyo Hub'
+                  desc='Events in the capital.'
+                  icon='🗼'
+                />
+                <FeatureCard
+                  title='Osaka Vibes'
+                  desc='Food & fun in Kansai.'
+                  icon='🐙'
+                />
+                <FeatureCard title='Tech' desc='Coding & Startups.' icon='💻' />
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -102,9 +160,9 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ title, count, icon }) {
+function FeatureCard({ title, desc, icon }) {
   return (
-    <Card className='hover:border-primary/50 transition-colors cursor-pointer bg-secondary border-white/10 group'>
+    <Card className='hover:border-primary/50 transition-colors cursor-pointer bg-secondary border-white/10 group h-full'>
       <CardHeader className='flex flex-row items-center gap-4'>
         <div className='size-12 rounded-lg bg-black/40 flex items-center justify-center text-2xl border border-white/10 group-hover:scale-110 transition-transform'>
           {icon}
@@ -113,7 +171,7 @@ function FeatureCard({ title, count, icon }) {
           <CardTitle className='text-lg text-white group-hover:text-primary transition-colors'>
             {title}
           </CardTitle>
-          <CardDescription className='text-zinc-400'>{count}</CardDescription>
+          <CardDescription className='text-zinc-400'>{desc}</CardDescription>
         </div>
       </CardHeader>
     </Card>
