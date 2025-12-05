@@ -1,59 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider'; // Use the hook
 import Image from 'next/image';
 
 export default function Navbar() {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setUser(session?.user || null);
-
-      if (session?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('full_name, avatar_url')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(data);
-      }
-    };
-    fetchData();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('full_name, avatar_url')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(data);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    router.push('/login');
-  };
+  const { user, profile, signOut } = useAuth(); // Global state
 
   return (
     <nav className='border-b border-white/10 bg-black/50 backdrop-blur-md sticky top-0 z-50'>
@@ -103,6 +55,8 @@ export default function Navbar() {
                       <Image
                         src={profile.avatar_url}
                         alt='Profile'
+                        width={36}
+                        height={36}
                         className='size-9 rounded-full object-cover border border-white/10 hover:border-primary/50 transition-colors'
                       />
                     ) : (
@@ -125,7 +79,7 @@ export default function Navbar() {
                 </Link>
                 <Button
                   variant='ghost'
-                  onClick={handleLogout}
+                  onClick={signOut}
                   className='text-sm text-zinc-400 hover:text-white'
                 >
                   Log out

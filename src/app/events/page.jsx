@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Navbar from '../../components/Navbar';
 import { EventCard } from '../../components/EventCard';
 import { supabase } from '../../lib/supabase';
 import { useSearchParams } from 'next/navigation';
@@ -62,7 +61,6 @@ export default function EventsPage() {
 
   return (
     <div className='min-h-screen bg-background'>
-      <Navbar />
       <main className='max-w-7xl mx-auto px-4 py-12'>
         <div className='flex flex-col gap-6 mb-8'>
           <div>

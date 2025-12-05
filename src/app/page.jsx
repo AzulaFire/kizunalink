@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
 import { Button } from '../components/ui/button';
 import {
   Card,
@@ -67,8 +66,6 @@ export default function Home() {
 
   return (
     <div className='min-h-screen flex flex-col bg-background'>
-      <Navbar />
-
       {/* Hero Section */}
       <section className='py-24 px-4 text-center space-y-8 max-w-4xl mx-auto mt-10'>
         <div className='inline-flex items-center rounded-full border border-primary/30 px-3 py-1 text-xs font-semibold bg-primary/10 text-primary-foreground'>

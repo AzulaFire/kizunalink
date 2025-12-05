@@ -7,7 +7,6 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import Navbar from '@/components/Navbar';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -106,7 +105,6 @@ export default function EventCalendar() {
 
   return (
     <div className='min-h-screen bg-zinc-50 dark:bg-black'>
-      <Navbar />
       <div className='max-w-7xl mx-auto px-4 py-8'>
         <div className='flex flex-col sm:flex-row justify-between items-center mb-6 gap-4'>
           <h1 className='text-3xl font-bold text-zinc-900 dark:text-white'>

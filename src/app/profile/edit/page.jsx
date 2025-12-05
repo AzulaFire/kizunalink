@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
@@ -169,7 +168,6 @@ export default function EditProfile() {
 
   return (
     <div className='min-h-screen bg-zinc-50 dark:bg-black'>
-      <Navbar />
       <main className='max-w-2xl mx-auto px-4 py-12'>
         <h1 className='text-3xl font-bold text-zinc-900 dark:text-white mb-8'>
           Edit Your Profile

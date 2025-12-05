@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,35 +20,24 @@ import Image from 'next/image';
 
 export default function Dashboard() {
   const router = useRouter();
-  const [profile, setProfile] = useState(null);
+  const { user, profile, loading: authLoading } = useAuth();
+
   const [myRsvps, setMyRsvps] = useState([]);
   const [hostedEvents, setHostedEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [cancelData, setCancelData] = useState(null);
 
-  const [cancelData, setCancelData] = useState(null); // { type: 'rsvp'|'host', id: ... }
-
-  // FIX: Moved fetchData inside useEffect to avoid external sync state updates
   useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+
     const fetchData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      setProfile(profileData);
+      if (!user) return;
 
       // Fetch Attending
-      const { data: rsvpData } = await supabase
+      const { data: rsvpData, error: rsvpError } = await supabase
         .from('event_attendees')
         .select(
           `
@@ -59,61 +48,66 @@ export default function Dashboard() {
         )
         .eq('user_id', user.id);
 
+      if (rsvpError) console.error('Error fetching RSVPs:', rsvpError);
       setMyRsvps(rsvpData || []);
 
       // Fetch Hosting
-      const { data: hostedData } = await supabase
+      const { data: hostedData, error: hostError } = await supabase
         .from('events')
         .select('*')
         .eq('host_id', user.id)
         .order('event_date', { ascending: true });
 
+      if (hostError) console.error('Error fetching hosted events:', hostError);
       setHostedEvents(hostedData || []);
-      setLoading(false);
+      setDataLoading(false);
     };
 
     fetchData();
-  }, [router]);
-
-  const confirmCancel = (type, id) => {
-    setCancelData({ type, id });
-  };
+  }, [user, authLoading, router]);
 
   const handleCancelAction = async () => {
-    if (!cancelData) return;
+    if (!cancelData || !user) return;
 
-    if (cancelData.type === 'rsvp') {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      await supabase
-        .from('event_attendees')
-        .delete()
-        .eq('event_id', cancelData.id)
-        .eq('user_id', user.id);
+    try {
+      if (cancelData.type === 'rsvp') {
+        const { error } = await supabase
+          .from('event_attendees')
+          .delete()
+          .eq('event_id', cancelData.id)
+          .eq('user_id', user.id);
 
-      // Optimistic update
-      setMyRsvps((prev) =>
-        prev.filter((item) => item.events.id !== cancelData.id)
-      );
-    } else if (cancelData.type === 'host') {
-      await supabase
-        .from('events')
-        .update({ status: 'cancelled' })
-        .eq('id', cancelData.id);
+        if (error) throw error;
 
-      // Optimistic update
-      setHostedEvents((prev) =>
-        prev.map((e) =>
-          e.id === cancelData.id ? { ...e, status: 'cancelled' } : e
-        )
-      );
+        // Optimistic update
+        setMyRsvps((prev) =>
+          prev.filter((item) => item.events?.id !== cancelData.id)
+        );
+      } else if (cancelData.type === 'host') {
+        const { error } = await supabase
+          .from('events')
+          .update({ status: 'cancelled' })
+          .eq('id', cancelData.id)
+          .eq('host_id', user.id); // Security check
+
+        if (error) throw error;
+
+        // Optimistic update
+        setHostedEvents((prev) =>
+          prev.map((e) =>
+            e.id === cancelData.id ? { ...e, status: 'cancelled' } : e
+          )
+        );
+      }
+    } catch (err) {
+      alert(`Action failed: ${err.message}. Please try again.`);
+      console.error(err);
+    } finally {
+      setCancelData(null);
     }
-
-    setCancelData(null);
   };
 
-  if (loading)
+  if (authLoading || dataLoading)
     return (
       <div className='min-h-screen bg-background flex items-center justify-center text-zinc-500'>
         Loading...
@@ -122,7 +116,7 @@ export default function Dashboard() {
 
   return (
     <div className='min-h-screen bg-background'>
-      <Navbar />
+      {/* Navbar is now in Layout */}
       <main className='max-w-6xl mx-auto px-4 py-12'>
         <div className='flex flex-col md:flex-row justify-between items-end mb-8 gap-4'>
           <div>
@@ -197,7 +191,9 @@ export default function Dashboard() {
                         <Button
                           size='sm'
                           variant='destructive'
-                          onClick={() => confirmCancel('host', event.id)}
+                          onClick={() =>
+                            setCancelData({ type: 'host', id: event.id })
+                          }
                         >
                           Cancel
                         </Button>
@@ -225,7 +221,8 @@ export default function Dashboard() {
               ) : (
                 myRsvps.map((rsvp, index) => {
                   const event = rsvp.events;
-                  if (!event) return null;
+                  if (!event) return null; // Handle deleted events gracefully
+
                   const dateObj = new Date(event.event_date);
                   return (
                     <Card
@@ -280,7 +277,9 @@ export default function Dashboard() {
                             size='sm'
                             variant='ghost'
                             className='text-zinc-500 hover:text-red-400'
-                            onClick={() => confirmCancel('rsvp', event.id)}
+                            onClick={() =>
+                              setCancelData({ type: 'rsvp', id: event.id })
+                            }
                           >
                             Leave
                           </Button>

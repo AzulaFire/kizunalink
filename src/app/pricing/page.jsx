@@ -1,6 +1,4 @@
 'use client';
-
-import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -23,8 +21,6 @@ export default function Pricing() {
 
   return (
     <div className='min-h-screen bg-zinc-50 dark:bg-black'>
-      <Navbar />
-
       {/* PayPal Script Provider wraps the content where buttons will appear */}
       <PayPalScriptProvider options={paypalOptions}>
         <div className='py-20 px-4 max-w-5xl mx-auto text-center'>

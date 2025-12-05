@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect, use } from 'react';
-import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,8 +18,12 @@ import {
 import Image from 'next/image';
 
 export default function EventDetail({ params }) {
-  const { id } = use(params);
+  // Safe param unwrapping for Next.js 15+
+  const resolvedParams = use(params);
+  const id = resolvedParams.id;
+
   const router = useRouter();
+  const { user } = useAuth(); // Use global auth
 
   const [event, setEvent] = useState(null);
   const [host, setHost] = useState(null);
@@ -27,23 +31,16 @@ export default function EventDetail({ params }) {
   const [attendeeCount, setAttendeeCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [rsvpLoading, setRsvpLoading] = useState(false);
-  const [user, setUser] = useState(null);
 
   const [hostRating, setHostRating] = useState(null);
   const [hitokoto, setHitokoto] = useState('');
   const [wantsNijikai, setWantsNijikai] = useState(false);
 
-  // Dialog State
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogAction, setDialogAction] = useState(null); // 'cancelEvent' or 'cancelRSVP'
+  const [dialogAction, setDialogAction] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-
       const { data: eventData, error } = await supabase
         .from('events')
         .select('*')
@@ -94,11 +91,11 @@ export default function EventDetail({ params }) {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, user]);
 
   const handleRSVP = async () => {
     if (!user) {
-      alert('Please log in to RSVP');
+      router.push('/login');
       return;
     }
     setRsvpLoading(true);
@@ -106,7 +103,7 @@ export default function EventDetail({ params }) {
     const { error } = await supabase.from('event_attendees').insert({
       event_id: id,
       user_id: user.id,
-      hitokoto: hitokoto || null, // Optional now
+      hitokoto: hitokoto || null,
       wants_nijikai: wantsNijikai,
     });
 
@@ -115,7 +112,7 @@ export default function EventDetail({ params }) {
       setAttendeeCount((prev) => prev + 1);
     } else {
       console.error(error);
-      alert('Error joining event.');
+      alert('Error joining event: ' + error.message);
     }
     setRsvpLoading(false);
   };
@@ -125,9 +122,13 @@ export default function EventDetail({ params }) {
       const { error } = await supabase
         .from('events')
         .update({ status: 'cancelled' })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('host_id', user.id); // Ensure ownership
+
       if (!error) {
         router.push('/dashboard');
+      } else {
+        alert('Failed to cancel event: ' + error.message);
       }
     } else if (dialogAction === 'cancelRSVP') {
       const { error } = await supabase
@@ -135,9 +136,12 @@ export default function EventDetail({ params }) {
         .delete()
         .eq('event_id', id)
         .eq('user_id', user.id);
+
       if (!error) {
         setHasRsvpd(false);
         setAttendeeCount((prev) => prev - 1);
+      } else {
+        alert('Failed to cancel RSVP: ' + error.message);
       }
     }
     setDialogOpen(false);
@@ -171,7 +175,7 @@ export default function EventDetail({ params }) {
 
   return (
     <div className='min-h-screen bg-zinc-50 dark:bg-black'>
-      <Navbar />
+      {/* Navbar handled by layout */}
       <main className='max-w-4xl mx-auto px-4 py-12'>
         <div className='grid md:grid-cols-3 gap-8'>
           <div className='md:col-span-2 space-y-6'>
@@ -256,8 +260,6 @@ export default function EventDetail({ params }) {
                   >
                     Cancel Event
                   </Button>
-                  {/* Edit button would route to an edit page */}
-                  {/* <Button variant="outline" size="sm">Edit Event</Button> */}
                 </div>
               </div>
             )}
